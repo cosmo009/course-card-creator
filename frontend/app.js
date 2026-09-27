@@ -3,8 +3,7 @@
    Loaded on both index.html (create) and record.html (view/edit).
    ============================================================ */
 
-const STORAGE_KEY = "course-records-v3";
-const PO_KEYS = ["PO1", "PO2", "PO3", "PO4", "PO5", "PO6", "PO7", "PO8", "PSO1", "PSO2"];
+const STORAGE_KEY = "course-records-v4";
 const EVAL_IDS = ["eTheoryExam", "eTheoryISE", "eTheoryMSE", "ePracticalISE", "ePracticalESE"];
 
 /* ---------------- Storage ---------------- */
@@ -37,22 +36,23 @@ function escapeHtml(str) {
 }
 const dash = (v) => (v === "" || v === undefined || v === null ? "-" : escapeHtml(v));
 
-function coCode(data, o) {
-  return `${data.courseCode}${o.suffix ? "." + o.suffix : ""}`;
-}
-
 /* ============================================================
-   Outcome repeater (used inside any <form id="course-form">
-   that contains #outcome-list, #addOutcome and #outcome-template)
+   Course Outcomes (CO) table — editable rows inside
+   <tbody id="outcome-list"> using <template id="outcome-template">.
+   Each row: auto CO label, auto code (courseCode.N), description,
+   PO/PSO text, CO target.
    ============================================================ */
 function initOutcomeRepeater(scopeEl) {
   const outcomeList = scopeEl.querySelector("#outcome-list");
   const addOutcomeBtn = scopeEl.querySelector("#addOutcome");
   const template = document.getElementById("outcome-template");
+  const courseCodeInput = scopeEl.querySelector("#courseCode");
 
   function renumber() {
-    outcomeList.querySelectorAll(".outcome-block").forEach((block, i) => {
-      block.querySelector(".o-num").textContent = i + 1;
+    const code = (courseCodeInput.value || "").trim() || "COURSE";
+    outcomeList.querySelectorAll(".outcome-row").forEach((row, i) => {
+      row.querySelector(".co-num").textContent = "CO" + (i + 1);
+      row.querySelector(".co-code").textContent = code + "." + (i + 1);
     });
   }
 
@@ -69,57 +69,27 @@ function initOutcomeRepeater(scopeEl) {
   }
 
   addOutcomeBtn.addEventListener("click", () => addBlock());
+  courseCodeInput.addEventListener("input", renumber);
 
   return { addBlock, renumber, outcomeList };
 }
 
-function populateOutcomeBlock(block, o) {
-  block.querySelector(".f-suffix").value = o.suffix || "";
-  block.querySelector(".f-target").value = o.target || "";
-  block.querySelector(".f-desc").value = o.description || "";
-  block.querySelector(".f-bloom").value = o.bloom || "Application";
-  block.querySelector(".f-tool").value = o.tool || "";
-  block.querySelectorAll(".f-po").forEach((inp) => {
-    inp.value = (o.poStrengths && o.poStrengths[inp.dataset.po]) || "";
-  });
-  [0, 1, 2].forEach((cycle) => {
-    const h = (o.history && o.history[cycle]) || {};
-    ["target", "actual", "remarks"].forEach((field) => {
-      const inp = block.querySelector(`.f-hist[data-cycle="${cycle}"][data-field="${field}"]`);
-      if (inp) inp.value = h[field] || "";
-    });
-  });
+function populateOutcomeBlock(row, o) {
+  row.querySelector(".f-desc").value = o.description || "";
+  row.querySelector(".f-po").value = o.poText || "";
+  row.querySelector(".f-target").value = o.target || "";
 }
 
-function readOutcomeBlock(block) {
-  const suffix = block.querySelector(".f-suffix").value.trim();
-  const description = block.querySelector(".f-desc").value.trim();
-  if (!suffix && !description) return null;
-
-  const poStrengths = {};
-  block.querySelectorAll(".f-po").forEach((inp) => {
-    const v = inp.value.trim();
-    if (v !== "") poStrengths[inp.dataset.po] = Math.max(1, Math.min(3, parseInt(v, 10) || 0));
-  });
-
-  const history = [0, 1, 2].map((cycle) => {
-    const get = (field) => block.querySelector(`.f-hist[data-cycle="${cycle}"][data-field="${field}"]`).value.trim();
-    return { target: get("target"), actual: get("actual"), remarks: get("remarks") };
-  });
-
-  return {
-    suffix,
-    description,
-    target: block.querySelector(".f-target").value.trim(),
-    bloom: block.querySelector(".f-bloom").value,
-    tool: block.querySelector(".f-tool").value.trim(),
-    poStrengths,
-    history,
-  };
+function readOutcomeBlock(row) {
+  const description = row.querySelector(".f-desc").value.trim();
+  const poText = row.querySelector(".f-po").value.trim();
+  const target = row.querySelector(".f-target").value.trim();
+  if (!description && !poText && !target) return null;
+  return { description, poText, target };
 }
 
 function readOutcomes(outcomeListEl) {
-  return Array.from(outcomeListEl.querySelectorAll(".outcome-block"))
+  return Array.from(outcomeListEl.querySelectorAll(".outcome-row"))
     .map(readOutcomeBlock)
     .filter(Boolean);
 }
@@ -144,7 +114,6 @@ function readFormData(scopeEl, outcomeListEl) {
     ePracticalISE: scopeEl.querySelector("#ePracticalISE").value,
     ePracticalESE: scopeEl.querySelector("#ePracticalESE").value,
     overview: val("overview"),
-    historyLabels: Array.from(scopeEl.querySelectorAll(".hist-label")).map((i) => i.value.trim()),
     outcomes: readOutcomes(outcomeListEl),
   };
 }
@@ -171,17 +140,13 @@ function populateFormData(scopeEl, repeater, data) {
   set("ePracticalESE", data.ePracticalESE || 0);
   set("overview", data.overview);
 
-  const histInputs = scopeEl.querySelectorAll(".hist-label");
-  (data.historyLabels || []).forEach((l, i) => {
-    if (histInputs[i]) histInputs[i].value = l || "";
-  });
-
   repeater.outcomeList.innerHTML = "";
   if (data.outcomes && data.outcomes.length) {
     data.outcomes.forEach((o) => repeater.addBlock(o));
   } else {
     repeater.addBlock();
   }
+  repeater.renumber();
 
   recalcTotal(scopeEl);
 }
@@ -201,7 +166,7 @@ function wireEvalTotal(scopeEl) {
 }
 
 /* ============================================================
-   Document rendering (the generated multi-table course record)
+   Document rendering (the generated course record)
    ============================================================ */
 function periodsRows(data) {
   const rows = [
@@ -268,114 +233,30 @@ function overviewMarkup(data) {
 function outcomesTableMarkup(data) {
   if (!data.outcomes || data.outcomes.length === 0) return "";
   const rows = data.outcomes
-    .map((o) => {
-      const pos = PO_KEYS.filter((k) => o.poStrengths[k]).join(", ") || "-";
-      return `
-        <tr>
-          <td class="left" style="font-weight:600;">${escapeHtml(coCode(data, o))}</td>
-          <td class="left">${escapeHtml(o.description)}</td>
-          <td>${pos}</td>
-          <td>${dash(o.target)}</td>
-        </tr>`;
-    })
-    .join("");
-  return `
-      <div class="course-doc__section">
-        <h3>Course Outcomes (CO)</h3>
-        <p>At the end of the course student will be able to:</p>
-        <div class="doc-table-wrap">
-        <table class="doc-table">
-          <thead><tr><th class="left">CO</th><th class="left">Outcome</th><th>PO/PSO</th><th>CO Target</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        </div>
-      </div>`;
-}
-
-function historyTableMarkup(data) {
-  if (!data.outcomes || data.outcomes.length === 0) return "";
-  const labels = data.historyLabels.map((l, i) => l || `Cycle ${i + 1}`);
-  const head1 = labels.map((l) => `<th colspan="3">CO attainment ${escapeHtml(l)}</th>`).join("");
-  const head2 = labels.map(() => `<th>target</th><th>actual</th><th>Remarks</th>`).join("");
-  const rows = data.outcomes
-    .map((o) => {
-      const cells = [0, 1, 2]
-        .map((i) => {
-          const h = o.history[i] || { target: "", actual: "", remarks: "" };
-          return `<td>${dash(h.target)}</td><td>${dash(h.actual)}</td><td>${dash(h.remarks)}</td>`;
-        })
-        .join("");
-      return `<tr><td style="font-weight:600;">${escapeHtml(coCode(data, o))}</td>${cells}</tr>`;
-    })
-    .join("");
-  return `
-      <div class="course-doc__section">
-        <h3>Justification for CO setting in ${escapeHtml(data.year)} target</h3>
-        <div class="doc-table-wrap">
-        <table class="doc-table">
-          <thead><tr><th></th>${head1}</tr><tr><th></th>${head2}</tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        </div>
-      </div>`;
-}
-
-function poMappingMarkup(data) {
-  if (!data.outcomes || data.outcomes.length === 0) return "";
-  const head = PO_KEYS.map((k) => `<th>${k}</th>`).join("");
-  const rows = data.outcomes
-    .map((o) => {
-      const cells = PO_KEYS.map((k) => `<td>${o.poStrengths[k] || "-"}</td>`).join("");
-      return `<tr><td style="font-weight:600;">${escapeHtml(coCode(data, o))}</td>${cells}</tr>`;
-    })
-    .join("");
-
-  const totals = PO_KEYS.map((k) => {
-    const vals = data.outcomes.map((o) => o.poStrengths[k]).filter((v) => v);
-    return vals.reduce((s, v) => s + v, 0);
-  });
-  const strengths = PO_KEYS.map((k) => {
-    const vals = data.outcomes.map((o) => o.poStrengths[k]).filter((v) => v);
-    if (vals.length === 0) return "-";
-    return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
-  });
-
-  return `
-      <div class="course-doc__section">
-        <h3>Mapping of CO with PO (correlation / strength matrix)</h3>
-        <p class="legend-text">Correlation Levels: 1 (weak) &nbsp; 2 (medium) &nbsp; 3 (strong)</p>
-        <p class="legend-text">It is decided based on depth of the teaching-learning required and questions planned to be asked in exams across the various assessment modes during a semester.</p>
-        <div class="doc-table-wrap">
-        <table class="doc-table">
-          <thead><tr><th></th>${head}</tr></thead>
-          <tbody>
-            ${rows}
-            <tr><td style="font-weight:600;">PO TOTAL</td>${totals.map((t) => `<td>${t || "-"}</td>`).join("")}</tr>
-            <tr><td style="font-weight:600;">STRENGTH</td>${strengths.map((s) => `<td>${s}</td>`).join("")}</tr>
-          </tbody>
-        </table>
-        </div>
-      </div>`;
-}
-
-function assessmentToolsMarkup(data) {
-  if (!data.outcomes || data.outcomes.length === 0) return "";
-  const rows = data.outcomes
     .map(
-      (o) => `
+      (o, i) => `
         <tr>
+          <td style="font-weight:600;">CO${i + 1}</td>
+          <td style="font-weight:600;white-space:nowrap;">${escapeHtml(data.courseCode)}.${i + 1}</td>
           <td class="left">${escapeHtml(o.description)}</td>
-          <td>${escapeHtml(o.bloom || "-")}</td>
-          <td>${dash(o.tool)}</td>
+          <td class="left">${dash(o.poText)}</td>
+          <td>${dash(o.target)}</td>
         </tr>`
     )
     .join("");
   return `
       <div class="course-doc__section">
-        <h3>Course Outcomes Assessment Tools Mapping</h3>
+        <h3>Course Outcomes (CO)</h3>
         <div class="doc-table-wrap">
         <table class="doc-table">
-          <thead><tr><th class="left">At the end of the course student will be able to</th><th>Bloom Level</th><th>Assessment Tool</th></tr></thead>
+          <thead>
+            <tr>
+              <th>CO</th>
+              <th colspan="2" class="left">At the end of the course student will be able to:</th>
+              <th class="left">PO/PSO</th>
+              <th>CO Target</th>
+            </tr>
+          </thead>
           <tbody>${rows}</tbody>
         </table>
         </div>
@@ -417,11 +298,8 @@ function fullDocMarkup(data) {
   return `
       ${topCardMarkup(data)}
       <div class="course-doc">
-        ${overviewMarkup(data)}
         ${outcomesTableMarkup(data)}
-        ${historyTableMarkup(data)}
-        ${poMappingMarkup(data)}
-        ${assessmentToolsMarkup(data)}
+        ${overviewMarkup(data)}
         ${RUBRIC_STATIC}
       </div>`;
 }

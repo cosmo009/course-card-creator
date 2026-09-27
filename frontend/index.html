@@ -90,19 +90,23 @@
         <textarea id="overview" rows="4" placeholder="One or two paragraphs describing the course. New paragraph = new line."></textarea>
       </div>
 
-      <fieldset class="history-labels">
-        <legend>Attainment history — year cycles</legend>
-        <div class="history-labels__grid">
-          <input type="text" class="hist-label" placeholder="e.g. 22-23">
-          <input type="text" class="hist-label" placeholder="e.g. 23-24">
-          <input type="text" class="hist-label" placeholder="e.g. 24-25">
-        </div>
-      </fieldset>
-
       <fieldset class="outcomes-wrap">
-        <legend>Course outcomes</legend>
-        <p class="hint">Add one entry per outcome (CO). PO/PSO strengths (1–3) feed the correlation matrix and totals automatically — leave a box empty for no correlation.</p>
-        <div id="outcome-list"></div>
+        <legend>Course Outcomes (CO)</legend>
+        <p class="hint">Each row is auto-tagged CO1, CO2… and linked to a code (e.g. MC501.1) as you add them — the course code above drives the code column.</p>
+        <div class="co-table-wrap">
+          <table class="co-input-table">
+            <thead>
+              <tr>
+                <th>CO</th>
+                <th colspan="2">At the end of the course student will be able to:</th>
+                <th>PO/PSO</th>
+                <th>CO Target</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="outcome-list"></tbody>
+          </table>
+        </div>
         <button type="button" id="addOutcome" class="btn btn--ghost btn--full">+ Add outcome</button>
       </fieldset>
 
@@ -121,86 +125,14 @@
 </main>
 
 <template id="outcome-template">
-  <div class="outcome-block">
-    <div class="outcome-block__head">
-      <span class="outcome-block__title">Outcome <span class="o-num"></span></span>
-      <button type="button" class="btn btn--ghost btn--small remove-outcome">Remove</button>
-    </div>
-
-    <div class="field-row">
-      <div class="field field--grow">
-        <label>Suffix <span class="hint-inline">(code becomes COURSE.suffix)</span></label>
-        <input type="text" class="f-suffix" placeholder="e.g. 1">
-      </div>
-      <div class="field field--grow">
-        <label>CO target (%)</label>
-        <input type="number" min="0" max="100" class="f-target" placeholder="e.g. 68">
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Description</label>
-      <textarea rows="2" class="f-desc" placeholder="Apply various operations of ... to solve problems from different domains."></textarea>
-    </div>
-
-    <div class="field-row">
-      <div class="field field--grow">
-        <label>Bloom level</label>
-        <select class="f-bloom">
-          <option>Remembering</option>
-          <option>Understanding</option>
-          <option selected>Application</option>
-          <option>Analysis</option>
-          <option>Evaluation</option>
-          <option>Creation</option>
-        </select>
-      </div>
-      <div class="field field--wide">
-        <label>Assessment tool</label>
-        <input type="text" class="f-tool" placeholder="e.g. ISE, MSE, ESE">
-      </div>
-    </div>
-
-    <div class="po-grid">
-      <span class="po-grid__label">PO / PSO strength</span>
-      <div class="po-grid__inputs">
-        <label>PO1<input type="number" min="1" max="3" class="f-po" data-po="PO1"></label>
-        <label>PO2<input type="number" min="1" max="3" class="f-po" data-po="PO2"></label>
-        <label>PO3<input type="number" min="1" max="3" class="f-po" data-po="PO3"></label>
-        <label>PO4<input type="number" min="1" max="3" class="f-po" data-po="PO4"></label>
-        <label>PO5<input type="number" min="1" max="3" class="f-po" data-po="PO5"></label>
-        <label>PO6<input type="number" min="1" max="3" class="f-po" data-po="PO6"></label>
-        <label>PO7<input type="number" min="1" max="3" class="f-po" data-po="PO7"></label>
-        <label>PO8<input type="number" min="1" max="3" class="f-po" data-po="PO8"></label>
-        <label>PSO1<input type="number" min="1" max="3" class="f-po" data-po="PSO1"></label>
-        <label>PSO2<input type="number" min="1" max="3" class="f-po" data-po="PSO2"></label>
-      </div>
-    </div>
-
-    <div class="hist-grid">
-      <span class="hist-grid__label">Attainment history</span>
-      <div class="hist-grid__cols">
-        <div class="hist-grid__col">
-          <span class="hist-grid__col-label">Cycle 1</span>
-          <label>Target<input type="text" class="f-hist" data-cycle="0" data-field="target"></label>
-          <label>Actual<input type="text" class="f-hist" data-cycle="0" data-field="actual"></label>
-          <label>Remarks<input type="text" class="f-hist" data-cycle="0" data-field="remarks"></label>
-        </div>
-        <div class="hist-grid__col">
-          <span class="hist-grid__col-label">Cycle 2</span>
-          <label>Target<input type="text" class="f-hist" data-cycle="1" data-field="target"></label>
-          <label>Actual<input type="text" class="f-hist" data-cycle="1" data-field="actual"></label>
-          <label>Remarks<input type="text" class="f-hist" data-cycle="1" data-field="remarks"></label>
-        </div>
-        <div class="hist-grid__col">
-          <span class="hist-grid__col-label">Cycle 3</span>
-          <label>Target<input type="text" class="f-hist" data-cycle="2" data-field="target"></label>
-          <label>Actual<input type="text" class="f-hist" data-cycle="2" data-field="actual"></label>
-          <label>Remarks<input type="text" class="f-hist" data-cycle="2" data-field="remarks"></label>
-        </div>
-      </div>
-    </div>
-  </div>
+  <tr class="outcome-row">
+    <td class="co-num"></td>
+    <td class="co-code"></td>
+    <td><textarea rows="2" class="f-desc" placeholder="Apply various operations of ... to solve problems from different domains."></textarea></td>
+    <td><input type="text" class="f-po" placeholder="e.g. PO1, PO2, PO4, PO5"></td>
+    <td><input type="number" min="0" max="100" class="f-target" placeholder="e.g. 68"></td>
+    <td><button type="button" class="btn btn--ghost btn--small remove-outcome" aria-label="Remove outcome">✕</button></td>
+  </tr>
 </template>
 
 <script src="app.js"></script>
