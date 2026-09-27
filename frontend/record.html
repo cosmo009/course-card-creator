@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Course Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__mark">§</div>
+  <div class="topbar__text">
+    <h1 id="record-title">Course Record</h1>
+    <p>View the saved record, or edit it in place.</p>
+  </div>
+  <a href="index.html" class="btn btn--ghost topbar__cta">+ New record</a>
+</header>
+
+<main class="page">
+
+  <div id="not-found" class="empty-state" hidden>
+    <p>This record couldn't be found.</p>
+    <p class="empty-state__sub">It may have been deleted, or the link is incorrect.</p>
+    <a href="index.html" class="btn btn--primary" style="display:inline-block;margin-top:12px;">Back to form</a>
+  </div>
+
+  <div id="record-app" hidden>
+
+    <div class="action-bar" id="view-actions">
+      <button type="button" id="editBtn" class="btn btn--primary">Edit record</button>
+      <button type="button" id="printBtn" class="btn btn--ghost">Print</button>
+      <button type="button" id="deleteBtn" class="btn btn--ghost btn--danger">Delete</button>
+    </div>
+
+    <article class="course-card" id="view-doc"></article>
+
+    <section class="panel form-panel" id="edit-wrap" hidden>
+      <h2>Edit course details</h2>
+      <form id="course-form">
+
+        <div class="field-row">
+          <div class="field">
+            <label for="program">Program</label>
+            <input type="text" id="program" placeholder="e.g. FYMCA" required>
+          </div>
+          <div class="field">
+            <label for="semester">Semester</label>
+            <input type="text" id="semester" placeholder="e.g. 1" required>
+          </div>
+          <div class="field">
+            <label for="year">Year</label>
+            <input type="text" id="year" placeholder="e.g. 25-26" required>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field field--grow">
+            <label for="courseCode">Course code</label>
+            <input type="text" id="courseCode" placeholder="e.g. MC501" required>
+          </div>
+          <div class="field field--wide">
+            <label for="courseName">Course name</label>
+            <input type="text" id="courseName" placeholder="e.g. Data Structures" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="prerequisite">Prerequisite</label>
+          <input type="text" id="prerequisite" placeholder="e.g. Object Oriented Programming">
+        </div>
+
+        <fieldset class="periods">
+          <legend>Periods per week <span>(each of 60 min.)</span></legend>
+          <div class="periods__grid">
+            <label class="periods__item"><span>Lecture</span><input type="number" min="0" step="0.5" id="pLecture" placeholder="hrs"></label>
+            <label class="periods__item"><span>Tutorial</span><input type="number" min="0" step="0.5" id="pTutorial" placeholder="hrs"></label>
+            <label class="periods__item"><span>Practical</span><input type="number" min="0" step="0.5" id="pPractical" placeholder="hrs"></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="faculty">Faculty in charge</label>
+          <input type="text" id="faculty" placeholder="e.g. Prof. Harshil Kanakia" required>
+        </div>
+
+        <fieldset class="evaluation">
+          <legend>Evaluation system <span>(marks)</span></legend>
+          <div class="evaluation__grid">
+            <label>Theory examination<input type="number" min="0" id="eTheoryExam" value="0"></label>
+            <label>Theory ISE<input type="number" min="0" id="eTheoryISE" value="0"></label>
+            <label>Theory MSE<input type="number" min="0" id="eTheoryMSE" value="0"></label>
+            <label>Practical ISE<input type="number" min="0" id="ePracticalISE" value="0"></label>
+            <label>Practical ESE<input type="number" min="0" id="ePracticalESE" value="0"></label>
+          </div>
+          <div class="evaluation__total">
+            <span>Total</span>
+            <strong id="evalTotal">0</strong>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="overview">Course overview</label>
+          <textarea id="overview" rows="4" placeholder="One or two paragraphs describing the course. New paragraph = new line."></textarea>
+        </div>
+
+        <fieldset class="history-labels">
+          <legend>Attainment history — year cycles</legend>
+          <div class="history-labels__grid">
+            <input type="text" class="hist-label" placeholder="e.g. 22-23">
+            <input type="text" class="hist-label" placeholder="e.g. 23-24">
+            <input type="text" class="hist-label" placeholder="e.g. 24-25">
+          </div>
+        </fieldset>
+
+        <fieldset class="outcomes-wrap">
+          <legend>Course outcomes</legend>
+          <p class="hint">PO/PSO strengths (1–3) feed the correlation matrix and totals automatically — leave a box empty for no correlation.</p>
+          <div id="outcome-list"></div>
+          <button type="button" id="addOutcome" class="btn btn--ghost btn--full">+ Add outcome</button>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary">Save changes</button>
+          <button type="button" id="cancelEdit" class="btn btn--ghost">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</main>
+
+<template id="outcome-template">
+  <div class="outcome-block">
+    <div class="outcome-block__head">
+      <span class="outcome-block__title">Outcome <span class="o-num"></span></span>
+      <button type="button" class="btn btn--ghost btn--small remove-outcome">Remove</button>
+    </div>
+
+    <div class="field-row">
+      <div class="field field--grow">
+        <label>Suffix <span class="hint-inline">(code becomes COURSE.suffix)</span></label>
+        <input type="text" class="f-suffix" placeholder="e.g. 1">
+      </div>
+      <div class="field field--grow">
+        <label>CO target (%)</label>
+        <input type="number" min="0" max="100" class="f-target" placeholder="e.g. 68">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea rows="2" class="f-desc" placeholder="Apply various operations of ... to solve problems from different domains."></textarea>
+    </div>
+
+    <div class="field-row">
+      <div class="field field--grow">
+        <label>Bloom level</label>
+        <select class="f-bloom">
+          <option>Remembering</option>
+          <option>Understanding</option>
+          <option selected>Application</option>
+          <option>Analysis</option>
+          <option>Evaluation</option>
+          <option>Creation</option>
+        </select>
+      </div>
+      <div class="field field--wide">
+        <label>Assessment tool</label>
+        <input type="text" class="f-tool" placeholder="e.g. ISE, MSE, ESE">
+      </div>
+    </div>
+
+    <div class="po-grid">
+      <span class="po-grid__label">PO / PSO strength</span>
+      <div class="po-grid__inputs">
+        <label>PO1<input type="number" min="1" max="3" class="f-po" data-po="PO1"></label>
+        <label>PO2<input type="number" min="1" max="3" class="f-po" data-po="PO2"></label>
+        <label>PO3<input type="number" min="1" max="3" class="f-po" data-po="PO3"></label>
+        <label>PO4<input type="number" min="1" max="3" class="f-po" data-po="PO4"></label>
+        <label>PO5<input type="number" min="1" max="3" class="f-po" data-po="PO5"></label>
+        <label>PO6<input type="number" min="1" max="3" class="f-po" data-po="PO6"></label>
+        <label>PO7<input type="number" min="1" max="3" class="f-po" data-po="PO7"></label>
+        <label>PO8<input type="number" min="1" max="3" class="f-po" data-po="PO8"></label>
+        <label>PSO1<input type="number" min="1" max="3" class="f-po" data-po="PSO1"></label>
+        <label>PSO2<input type="number" min="1" max="3" class="f-po" data-po="PSO2"></label>
+      </div>
+    </div>
+
+    <div class="hist-grid">
+      <span class="hist-grid__label">Attainment history</span>
+      <div class="hist-grid__cols">
+        <div class="hist-grid__col">
+          <span class="hist-grid__col-label">Cycle 1</span>
+          <label>Target<input type="text" class="f-hist" data-cycle="0" data-field="target"></label>
+          <label>Actual<input type="text" class="f-hist" data-cycle="0" data-field="actual"></label>
+          <label>Remarks<input type="text" class="f-hist" data-cycle="0" data-field="remarks"></label>
+        </div>
+        <div class="hist-grid__col">
+          <span class="hist-grid__col-label">Cycle 2</span>
+          <label>Target<input type="text" class="f-hist" data-cycle="1" data-field="target"></label>
+          <label>Actual<input type="text" class="f-hist" data-cycle="1" data-field="actual"></label>
+          <label>Remarks<input type="text" class="f-hist" data-cycle="1" data-field="remarks"></label>
+        </div>
+        <div class="hist-grid__col">
+          <span class="hist-grid__col-label">Cycle 3</span>
+          <label>Target<input type="text" class="f-hist" data-cycle="2" data-field="target"></label>
+          <label>Actual<input type="text" class="f-hist" data-cycle="2" data-field="actual"></label>
+          <label>Remarks<input type="text" class="f-hist" data-cycle="2" data-field="remarks"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="app.js"></script>
+<script src="record.js"></script>
+</body>
+</html>
